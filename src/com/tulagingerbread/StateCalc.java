@@ -10,7 +10,10 @@ public class StateCalc implements Runnable {
 
     public static void main(String[] args) {
         try {
-            new Thread(new StateCalc("D:\\state.bin", State.getRandomState(30, 20))).start();
+            int w = args.length > 0 ? Integer.parseInt(args[0]) : 30;
+            int h = args.length > 1 ? Integer.parseInt(args[1]) : 20;
+            String filename = args.length > 2 ? args[2] : "state.bin";
+            new Thread(new StateCalc(filename, State.getRandomState(w, h))).start();
         }
         catch (IOException e) {
             e.printStackTrace();

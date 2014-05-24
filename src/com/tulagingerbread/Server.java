@@ -1,9 +1,6 @@
 package com.tulagingerbread;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -19,12 +16,12 @@ public class Server implements Runnable {
         try {
             int w = args.length > 0 ? Integer.parseInt(args[0]) : 30;
             int h = args.length > 1 ? Integer.parseInt(args[1]) : 20;
-            String filename = args.length > 2 ? args[2] : "D:\\state.bin";
+            String filename = args.length > 2 ? args[2] : "state.bin";
             State random = State.getRandomState(w, h);
+            String java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java.exe";
             new Thread(new Server(2550, filename, random)).start();
-            new ProcessBuilder("\"C:\\Program Files\\Java\\jdk1.8.0_05\\bin\\java.exe\"",
-                               "-cp", "out\\production\\ServerLife",
-                               StateCalc.class.getCanonicalName()
+            new ProcessBuilder(java, "-cp", "ServerLife.jar", StateCalc.class.getCanonicalName(),
+                               Integer.toString(w), Integer.toString(h), filename
             ).start();
         }
         catch (IOException e) {
@@ -33,7 +30,7 @@ public class Server implements Runnable {
     }
 
     public Server(int port, String filename, State initial) throws IOException {
-        RandomAccessFile memoryFile = new RandomAccessFile(filename, "r");
+        RandomAccessFile memoryFile = new RandomAccessFile(filename, "rw");
         ssm = memoryFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, initial.toBytes().length);
         socket = new ServerSocket(port);
     }
