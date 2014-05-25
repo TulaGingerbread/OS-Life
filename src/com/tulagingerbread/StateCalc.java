@@ -5,7 +5,7 @@ import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class StateCalc implements Runnable {
+public class StateCalc {
     private final MappedByteBuffer ssm;
 
     public static void main(String[] args) {
@@ -13,7 +13,7 @@ public class StateCalc implements Runnable {
             int w = args.length > 0 ? Integer.parseInt(args[0]) : 30;
             int h = args.length > 1 ? Integer.parseInt(args[1]) : 20;
             String filename = args.length > 2 ? args[2] : "state.bin";
-            new Thread(new StateCalc(filename, State.getRandomState(w, h))).start();
+            new StateCalc(filename, State.getRandomState(w, h)).start();
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -26,8 +26,7 @@ public class StateCalc implements Runnable {
         State.setCurrentState(initial, ssm);
     }
 
-    @Override
-    public void run() {
+    public void start() {
         while (true) {
             State current = State.getCurrentState(ssm);
             int w = current.getWidth();
@@ -44,10 +43,7 @@ public class StateCalc implements Runnable {
             try {
                 Thread.sleep(1000);
             }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
-            }
+            catch (InterruptedException ignored) {}
         }
     }
 }

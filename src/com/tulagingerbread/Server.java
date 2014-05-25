@@ -1,6 +1,7 @@
 package com.tulagingerbread;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -11,12 +12,18 @@ import java.nio.channels.FileChannel;
 public class Server implements Runnable {
     private final ServerSocket socket;
     private final MappedByteBuffer ssm;
+    private static String clientClassName = "Client";
 
     public static void main(String[] args) {
         try {
-            int w = args.length > 0 ? Integer.parseInt(args[0]) : 30;
-            int h = args.length > 1 ? Integer.parseInt(args[1]) : 20;
-            String filename = args.length > 2 ? args[2] : "state.bin";
+            int i = 0;
+            if (args.length > 0 && args[0].equals("-t")) {
+                clientClassName = "TelnetClient";
+                i++;
+            }
+            int w = args.length > i ? Integer.parseInt(args[i++]) : 30;
+            int h = args.length > i ? Integer.parseInt(args[i++]) : 20;
+            String filename = args.length > i ? args[i] : "state.bin";
             State random = State.getRandomState(w, h);
             String java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java.exe";
             new Thread(new Server(2550, filename, random)).start();
@@ -36,6 +43,7 @@ public class Server implements Runnable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void run() {
         while (true) {
             try {
@@ -44,19 +52,21 @@ public class Server implements Runnable {
                                    + client.getInetAddress().getHostAddress()
                                    + ":" + client.getPort()
                 );
-                new Thread(new Client(client)).start();
+                Class<Runnable> clazz = (Class<Runnable>) Class.forName("com.tulagingerbread.Server$" + clientClassName);
+                Constructor<Runnable> constructor = clazz.getDeclaredConstructor(Server.class, Socket.class);
+                new Thread(constructor.newInstance(this, client)).start();
             }
-            catch (IOException e) {
+            catch (Exception e) {
                 e.printStackTrace();
                 break;
             }
         }
     }
 
-    private class TelnetClient implements Runnable {
+    public class TelnetClient implements Runnable {
         OutputStream os;
 
-        TelnetClient(Socket s) throws IOException {
+        public TelnetClient(Socket s) throws IOException {
             this.os = s.getOutputStream();
         }
 
@@ -67,6 +77,10 @@ public class Server implements Runnable {
                     State.drawState(os, ssm);
                     Thread.sleep(1000);
                 }
+                catch (SocketException ignored) {
+                    System.out.println("Client disconnected");
+                    break;
+                }
                 catch (InterruptedException | IOException e) {
                     e.printStackTrace();
                     break;
@@ -75,11 +89,11 @@ public class Server implements Runnable {
         }
     }
 
-    private class Client implements Runnable {
+    public class Client implements Runnable {
         InputStream is;
         OutputStream os;
 
-        Client(Socket s) throws IOException {
+        public Client(Socket s) throws IOException {
             this.is = s.getInputStream();
             this.os = s.getOutputStream();
         }
@@ -102,7 +116,9 @@ public class Server implements Runnable {
                     }
                 }
             }
-            catch (SocketException ignored) {}
+            catch (SocketException ignored) {
+                System.out.println("Client disconnected");
+            }
             catch (IOException e) {
                 e.printStackTrace();
             }

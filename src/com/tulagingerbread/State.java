@@ -54,15 +54,21 @@ public class State {
     }
 
     public static State getCurrentState(MappedByteBuffer ssm) {
+        Locker locker = new Locker();
+        locker.lock();
         byte[] ar = new byte[ssm.capacity()];
         ssm.rewind();
         for (int i = 0; i < ssm.capacity(); i++) ar[i] = ssm.get();
+        locker.unlock();
         return State.fromBytes(ar);
     }
 
     public static void setCurrentState(State currentState, MappedByteBuffer ssm) {
+        Locker locker = new Locker();
+        locker.lock();
         ssm.rewind();
         ssm.put(currentState.toBytes());
+        locker.unlock();
     }
 
     public static void drawState(OutputStream out, MappedByteBuffer ssm) throws IOException {
@@ -72,11 +78,13 @@ public class State {
 
     public static void drawState(State current, OutputStream out) throws IOException {
         for (int i = 0; i < current.getWidth(); i++) out.write('=');
+        out.write(0xd);
         out.write(0xa);
         for (int i = 0; i < current.getHeight(); i++) {
             for (int j = 0; j < current.getWidth(); j++) {
                 out.write(current.isCellAlive(i, j) ? '#' : ' ');
             }
+            out.write(0xd);
             out.write(0xa);
         }
     }
