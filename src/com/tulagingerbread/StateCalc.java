@@ -13,17 +13,19 @@ public class StateCalc {
             int w = args.length > 0 ? Integer.parseInt(args[0]) : 30;
             int h = args.length > 1 ? Integer.parseInt(args[1]) : 20;
             String filename = args.length > 2 ? args[2] : "state.bin";
-            new StateCalc(filename, State.getRandomState(w, h)).start();
+            System.out.println("State calculator started");
+            System.out.println("Params: width " + w + ", height " + h + ", file " + filename);
+            new StateCalc(filename, w, h).start();
         }
         catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public StateCalc(String filename, State initial) throws IOException {
+    public StateCalc(String filename, int w, int h) throws IOException {
         RandomAccessFile memoryFile = new RandomAccessFile(filename, "rw");
-        ssm = memoryFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, initial.toBytes().length);
-        State.setCurrentState(initial, ssm);
+        ssm = memoryFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, State.maximumLength(w, h));
+        State.setCurrentState(State.getRandomState(w, h), ssm);
     }
 
     public void start() {

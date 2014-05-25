@@ -13,6 +13,7 @@ public class Server implements Runnable {
     private final ServerSocket socket;
     private final MappedByteBuffer ssm;
     private static String clientClassName = "Client";
+    private final static int PORT = 2550;
 
     public static void main(String[] args) {
         try {
@@ -24,27 +25,31 @@ public class Server implements Runnable {
             int w = args.length > i ? Integer.parseInt(args[i++]) : 30;
             int h = args.length > i ? Integer.parseInt(args[i++]) : 20;
             String filename = args.length > i ? args[i] : "state.bin";
-            State random = State.getRandomState(w, h);
             String java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java.exe";
-            new Thread(new Server(2550, filename, random)).start();
-            new ProcessBuilder(java, "-cp", "ServerLife.jar", StateCalc.class.getCanonicalName(),
-                               Integer.toString(w), Integer.toString(h), filename
-            ).start();
+            System.out.println("Params: width " + w + ", height " + h + ", file " + filename);
+            ProcessBuilder pb = new ProcessBuilder(
+                    java, "-cp", "ServerLife.jar", StateCalc.class.getCanonicalName(),
+                    Integer.toString(w), Integer.toString(h), filename
+            );
+            pb.inheritIO();
+            pb.start();
+            new Thread(new Server(PORT, filename, w, h)).start();
         }
         catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public Server(int port, String filename, State initial) throws IOException {
+    public Server(int port, String filename, int w, int h) throws IOException {
         RandomAccessFile memoryFile = new RandomAccessFile(filename, "rw");
-        ssm = memoryFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, initial.toBytes().length);
+        ssm = memoryFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, State.maximumLength(w, h));
         socket = new ServerSocket(port);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void run() {
+        System.out.println("Server started at port " + PORT);
         while (true) {
             try {
                 Socket client = socket.accept();

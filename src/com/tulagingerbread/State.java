@@ -40,10 +40,10 @@ public class State {
     public int getAdjacentAlive(int i, int j) {
         int count = isCellAlive(i, j) ? -1 : 0;
         for (int m : nei) for (int n : nei) {
-            int k = (i + m) % h;
-            int l = (j + n) % w;
-            if (k < 0) k += h;
-            if (l < 0) l += w;
+            int k = (i + m) % w;
+            int l = (j + n) % h;
+            if (k < 0) k += w;
+            if (l < 0) l += h;
             if (isCellAlive(k, l)) count++;
         }
         return count;
@@ -82,11 +82,17 @@ public class State {
         out.write(0xa);
         for (int i = 0; i < current.getHeight(); i++) {
             for (int j = 0; j < current.getWidth(); j++) {
-                out.write(current.isCellAlive(i, j) ? '#' : ' ');
+                out.write(current.isCellAlive(j, i) ? '#' : ' ');
             }
             out.write(0xd);
             out.write(0xa);
         }
+    }
+
+    public static int maximumLength(int w, int h) {
+        State s = new State(w, h);
+        for (int i = 0; i < w; i++) for (int j = 0; j < h; j++) s.spawn(i, j);
+        return s.toBytes().length;
     }
 
     public byte[] toBytes() {
